@@ -1719,18 +1719,19 @@ static void XXH_free(void* p) { (void)p; }
  * different memory routines for malloc() and free()
  */
 #include <stdlib.h>
+#include <mfu_util.h>
 
 /*!
  * @internal
  * @brief Modify this function to use a different routine than malloc().
  */
-static XXH_MALLOCF void* XXH_malloc(size_t s) { return malloc(s); }
+static XXH_MALLOCF void* XXH_malloc(size_t s) { return mfu_malloc(s, __FILE__, __LINE__); }
 
 /*!
  * @internal
  * @brief Modify this function to use a different routine than free().
  */
-static void XXH_free(void* p) { free(p); }
+static void XXH_free(void* p) { mfu_free(p); }
 
 #endif  /* XXH_NO_STDLIB */
 

@@ -7,7 +7,9 @@
 
 cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
-set(XXHASH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
+set(XXHASH_DIR "${CMAKE_HOME_DIRECTORY}/xxhash")
+
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_HOME_DIRECTORY}")
 
 file(STRINGS "${XXHASH_DIR}/xxhash.h" XXHASH_VERSION_MAJOR REGEX "^#define XXH_VERSION_MAJOR +([0-9]+) *$")
 string(REGEX REPLACE "^#define XXH_VERSION_MAJOR +([0-9]+) *$" "\\1" XXHASH_VERSION_MAJOR "${XXHASH_VERSION_MAJOR}")
@@ -35,7 +37,7 @@ else()
 endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Project build type" FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "f build type" FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE
     PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
 endif()
@@ -53,7 +55,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared library" ON)
-option(XXHASH_BUILD_XXHSUM "Build the xxhsum binary" ON)
 
 # If XXHASH is being bundled in another project, we don't want to
 # install anything.  However, we want to let people override this, so
@@ -90,26 +91,14 @@ set_target_properties(xxhash PROPERTIES
   SOVERSION "${XXHASH_LIB_SOVERSION}"
   VERSION "${XXHASH_VERSION_STRING}")
 
-if(XXHASH_BUILD_XXHSUM)
-  set(XXHSUM_DIR "${XXHASH_DIR}/cli")
-  # xxhsum
-  add_executable(xxhsum "${XXHSUM_DIR}/xxhsum.c"
-                        "${XXHSUM_DIR}/xsum_os_specific.c"
-                        "${XXHSUM_DIR}/xsum_output.c"
-                        "${XXHSUM_DIR}/xsum_sanity_check.c"
-                        "${XXHSUM_DIR}/xsum_bench.c"
-                )
-  add_executable(${PROJECT_NAME}::xxhsum ALIAS xxhsum)
-
-  target_link_libraries(xxhsum PRIVATE xxhash)
-  target_include_directories(xxhsum PRIVATE "${XXHASH_DIR}")
-endif(XXHASH_BUILD_XXHSUM)
-
 # Extra warning flags
 include (CheckCCompilerFlag)
 if (XXHASH_C_FLAGS)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${XXHASH_C_FLAGS}")
 endif()
+
+# link mfu library for malloc
+target_link_libraries(xxhash mfu m)
 
 if(NOT XXHASH_BUNDLED_MODE)
   include(GNUInstallDirs)
@@ -123,13 +112,6 @@ if(NOT XXHASH_BUNDLED_MODE)
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   install(FILES "${XXHASH_DIR}/xxh3.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-  if(XXHASH_BUILD_XXHSUM)
-    install(TARGETS xxhsum
-      EXPORT xxHashTargets
-      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-    install(FILES "${XXHSUM_DIR}/xxhsum.1"
-      DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
-  endif(XXHASH_BUILD_XXHSUM)
 
   include(CMakePackageConfigHelpers)
 
